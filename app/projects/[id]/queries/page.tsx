@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { prisma } from "../../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 type QueriesPageProps = {
   params: { id: string };
@@ -14,6 +14,36 @@ type ParsedRow = {
 };
 
 const MAX_ROWS = 1000;
+const MOCK_NOTES = [
+  "AI answer detected (mock)",
+  "AI overview summarized the query (mock)",
+  "AI answer absent (mock)",
+  "AI answer present with citations (mock)"
+];
+
+function pickRandom<T>(items: T[]) {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+function buildCitedUrls(domain: string, includeDomain: boolean) {
+  const samples = [
+    `https://${domain}/blog/aeo-basics`,
+    `https://${domain}/guides/ai-search`,
+    "https://example.com/seo/ai-overviews",
+    "https://search.engine/docs/ai-answers",
+    "https://industryreport.com/aeo-trends"
+  ];
+
+  const shuffled = samples.sort(() => 0.5 - Math.random());
+  const count = 1 + Math.floor(Math.random() * 3);
+  const urls = shuffled.slice(0, count);
+
+  if (includeDomain && !urls.some((url) => url.includes(domain))) {
+    urls.push(`https://${domain}/`);
+  }
+
+  return urls;
+}
 
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
@@ -164,6 +194,74 @@ async function uploadCsv(formData: FormData) {
   redirect(`/projects/${projectId}/queries`);
 }
 
+async function runScan(formData: FormData) {
+  "use server";
+  const projectId = String(formData.get("projectId") ?? "");
+  const querySetId = String(formData.get("querySetId") ?? "");
+
+  if (!projectId || !querySetId) {
+    redirect("/projects");
+  }
+
+  const querySet = await prisma.querySet.findUnique({
+    where: { id: querySetId },
+    include: {
+      project: { select: { domain: true } },
+      queries: true
+    }
+  });
+
+  if (!querySet) {
+    redirect(`/projects/${projectId}/queries?error=Query%20set%20not%20found.`);
+  }
+
+  if (querySet.queries.length === 0) {
+    redirect(
+      `/projects/${projectId}/queries?error=No%20queries%20in%20this%20query%20set.`
+    );
+  }
+
+  const startedAt = new Date();
+  const scan = await prisma.scan.create({
+    data: {
+      querySetId: querySet.id,
+      status: "running",
+      startedAt
+    }
+  });
+
+  const results = querySet.queries.map((query) => {
+    const aiPresence = Math.random() < 0.68;
+    const brandMentioned = aiPresence && Math.random() < 0.42;
+    const yourUrlCited = aiPresence && Math.random() < 0.28;
+
+    return {
+      scanId: scan.id,
+      queryId: query.id,
+      aiPresence,
+      brandMentioned,
+      yourUrlCited,
+      citedUrls: aiPresence
+        ? buildCitedUrls(querySet.project.domain, yourUrlCited)
+        : [],
+      notes: pickRandom(MOCK_NOTES),
+      capturedAt: new Date()
+    };
+  });
+
+  await prisma.scanResult.createMany({ data: results });
+
+  await prisma.scan.update({
+    where: { id: scan.id },
+    data: {
+      status: "done",
+      finishedAt: new Date()
+    }
+  });
+
+  redirect(`/projects/${projectId}/scans/${scan.id}`);
+}
+
 export default async function ProjectQueriesPage({
   params,
   searchParams
@@ -272,6 +370,24 @@ export default async function ProjectQueriesPage({
                   <div className="text-xs text-slate-500">
                     {set.createdAt.toLocaleDateString()}
                   </div>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <form action={runScan}>
+                    <input type="hidden" name="projectId" value={project.id} />
+                    <input type="hidden" name="querySetId" value={set.id} />
+                    <button
+                      className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white"
+                      type="submit"
+                    >
+                      Run scan
+                    </button>
+                  </form>
+                  <Link
+                    className="text-xs font-medium text-slate-600 hover:underline"
+                    href={`/projects/${project.id}/queries/${set.id}/scans`}
+                  >
+                    View scans
+                  </Link>
                 </div>
                 <ul className="mt-3 grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
                   {set.queries.map((query) => (
