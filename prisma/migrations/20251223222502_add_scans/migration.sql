@@ -3,7 +3,7 @@ CREATE TYPE "ScanStatus" AS ENUM ('queued', 'running', 'done', 'failed');
 
 -- CreateTable
 CREATE TABLE "Scan" (
-    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "id" UUID NOT NULL,
     "querySetId" UUID NOT NULL,
     "status" "ScanStatus" NOT NULL,
     "startedAt" TIMESTAMP(3),
@@ -15,7 +15,7 @@ CREATE TABLE "Scan" (
 
 -- CreateTable
 CREATE TABLE "ScanResult" (
-    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "id" UUID NOT NULL,
     "scanId" UUID NOT NULL,
     "queryId" UUID NOT NULL,
     "aiPresence" BOOLEAN NOT NULL,
@@ -38,10 +38,10 @@ CREATE INDEX "ScanResult_scanId_idx" ON "ScanResult"("scanId");
 CREATE INDEX "ScanResult_queryId_idx" ON "ScanResult"("queryId");
 
 -- AddForeignKey
-ALTER TABLE "Scan" ADD CONSTRAINT "Scan_querySetId_fkey" FOREIGN KEY ("querySetId") REFERENCES "QuerySet"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Scan" ADD CONSTRAINT "Scan_querySetId_fkey" FOREIGN KEY ("querySetId") REFERENCES "QuerySet"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ScanResult" ADD CONSTRAINT "ScanResult_scanId_fkey" FOREIGN KEY ("scanId") REFERENCES "Scan"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ScanResult" ADD CONSTRAINT "ScanResult_scanId_fkey" FOREIGN KEY ("scanId") REFERENCES "Scan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ScanResult" ADD CONSTRAINT "ScanResult_queryId_fkey" FOREIGN KEY ("queryId") REFERENCES "Query"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ScanResult" ADD CONSTRAINT "ScanResult_queryId_fkey" FOREIGN KEY ("queryId") REFERENCES "Query"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
