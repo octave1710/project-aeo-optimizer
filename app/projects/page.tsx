@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { prisma } from "../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 export default async function ProjectsPage() {
   const projects = await prisma.project.findMany({

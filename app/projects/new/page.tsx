@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 async function getWorkspaceId() {
   const workspace = await prisma.workspace.findFirst({

@@ -44,6 +44,12 @@ export default async function ProjectDetailPage({
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-semibold">{project.name}</h1>
           <p className="text-sm text-slate-600">{project.domain}</p>
+          <Link
+            className="w-fit text-sm font-medium text-slate-700 hover:underline"
+            href={`/projects/${project.id}/queries`}
+          >
+            View queries
+          </Link>
           <div className="text-sm text-slate-600">
             Locale: {project.localeLanguage.toUpperCase()}-
             {project.localeCountry.toUpperCase()}

@@ -18,3 +18,9 @@ Steps:
 5. Run migrations: `npm run prisma:migrate`.
 6. Seed demo data: `npx prisma db seed`.
 7. Start the dev server: `npm run dev`.
+
+## CSV format
+Upload a CSV with these columns:
+- `query` (required)
+- `intent` (optional)
+- `priority` (optional number)
